@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Seu Resultado — Diabetal AI</title>
+
+	<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+	<link rel="stylesheet" href="../css/results.css">
+</head>
+<body>
+
+	<nav class="nav">
+		<div class="nav-inner container">
+			<a class="brand" href="index.html">Diabetal <span class="dot">AI</span></a>
+
+			<div class="nav-actions">
+				<a href="index.html#info" class="nav-link">Sobre</a>
+				<a href="index.html#como" class="nav-link">Como Funciona</a>
+				<a href="forms.html" class="btn small">Refazer Avaliação</a>
+			</div>
+		</div>
+	</nav>
+
+	<header class="header">
+		<div class="container">
+			<h1>Resultado da Avaliação</h1>
+			<p class="lead">Aqui está a estimativa baseada nos dados que você informou. Lembre-se: é apenas informativo e não substitui consulta médica.</p>
+		</div>
+	</header>
+
+	<main class="container results-container">
+
+		<section class="result-grid">
+			<div class="result-card card-large">
+				<h2>Probabilidade Estimada</h2>
+				<div id="risco" class="risk-value">--%</div>
+				<p id="nivel-risco" class="risk-label">--</p>
+
+				<div class="risk-bar-wrap">
+					<div id="risk-bar" class="risk-bar"></div>
+				</div>
+
+				<div class="result-actions">
+					<a href="forms.html" class="btn small">Refazer Avaliação</a>
+				</div>
+			</div>
+
+			<div class="result-card">
+				<h2>Principais fatores influentes</h2>
+				<ul id="fatores"></ul>
+			</div>
+		</section>
+
+		<section class="result-card">
+			<h2>Gráfico Simples (Mockado)</h2>
+			<canvas id="grafico" width="700" height="250"></canvas>
+		</section>
+
+	</main>
+
+	<footer class="footer">
+		<div class="container footer-inner">
+			<div><strong>Diabetal AI</strong> — Tecnologia e empatia na saúde.</div>
+		</div>
+	</footer>
+
+	<script src="../js/results.js"></script>
+</body>
+</html>

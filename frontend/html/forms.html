@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Diabetal AI — Avaliação</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <link rel="stylesheet" href="../css/forms.css">
+</head>
+<body>
+
+    <nav class="nav">
+        <div class="nav-inner container">
+        <a class="brand" href="index.html">Diabetal <span class="dot">AI</span></a>
+
+        <div class="nav-actions">
+            <a href="index.html#info" class="nav-link">Sobre</a>
+            <a href="index.html#como" class="nav-link">Como Funciona</a>
+        </div>
+        </div>
+    </nav>
+
+    <header class="header">
+        <div class="container">
+        <h1>Avaliação de Risco</h1>
+        <p class="lead">Responda algumas perguntas rápidas para gerar sua estimativa inicial.</p>
+        </div>
+    </header>
+
+    <main class="container form-container">
+        <form id="form">
+
+        <div class="form-card">
+            <h2>Informações Básicas</h2>
+
+            <label>Idade</label>
+            <input type="number" min="1" max="120" required placeholder="Ex: 35">
+
+            <label>Número de gestações</label>
+            <input type="number" min="0" max="20" required placeholder="Ex: 2">
+
+            <label>IMC (Índice de Massa Corporal)</label>
+            <input type="number" step="0.1" min="10" max="100" required placeholder="Ex: 26.3">
+        </div>
+
+        <div class="form-card">
+            <h2>Exames Recentes</h2>
+
+            <label>Nível de glicose em jejum (mg/dL)</label>
+            <input type="number" min="0" max="999" required placeholder="Ex: 110">
+
+            <label>Pressão arterial diastólica (mmHg)</label>
+            <input type="number" min="0" max="999" required placeholder="Ex: 80">
+
+            <label>Nível de insulina sérica (µU/mL)</label>
+            <input type="number" min="0" max="999" placeholder="Ex: 90">
+        </div>
+
+        <div class="form-card">
+            <h2>Histórico Familiar</h2>
+
+            <label>Qual é o nível de histórico familiar de diabetes?</label>
+            <select required>
+            <option value="" disabled selected>Selecione</option>
+            <option value="0">Nenhum caso na família</option>
+            <option value="0.2">Casos distantes</option>
+            <option value="0.5">Pais ou avós</option>
+            <option value="0.8">Múltiplos parentes</option>
+            <option value="1.2">Histórico forte</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn cta submit-btn">Gerar Resultado</button>
+
+        </form>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-inner">
+        <div><strong>Diabetal AI</strong> — Tecnologia e empatia na saúde.</div>
+        </div>
+    </footer>
+    <script src="../js/forms.js"></script>
+</body>
+</html>

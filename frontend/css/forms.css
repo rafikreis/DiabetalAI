@@ -1,0 +1,150 @@
+:root {
+  --bg: #f3f8f7;
+  --accent: #2fb395;
+  --accent-2: #66c2a8;
+  --muted: #4b6b66;
+  --soft-shadow: 0 10px 30px rgba(11,30,27,0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: #153f3a;
+  font-family: 'Poppins', sans-serif;
+}
+
+.nav {
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,0.45);
+  backdrop-filter: blur(6px);
+  border-bottom: 1px solid rgba(10,60,55,0.05);
+  z-index: 40;
+}
+
+.nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+}
+
+.container {
+  width: 92%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.brand {
+  text-decoration: none;
+  color: #0f3b36;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.brand .dot { color: var(--accent); }
+
+.nav-link {
+  color: var(--muted);
+  font-weight: 600;
+  text-decoration: none;
+  padding: 8px 12px;
+}
+
+.nav-link:hover {
+  background: rgba(20,80,70,0.06);
+  border-radius: 8px;
+}
+
+.header {
+  padding: 40px 0 20px;
+  text-align: center;
+}
+
+.header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #073a36;
+}
+
+.lead {
+  margin-top: 10px;
+  color: #2e6059;
+  font-size: 16px;
+}
+
+.form-container {
+  margin-top: 20px;
+  padding-bottom: 40px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.form-card {
+  background: white;
+  padding: 20px;
+  border-radius: 14px;
+  box-shadow: var(--soft-shadow);
+}
+
+.form-card h2 {
+  font-size: 22px;
+  color: #0f5a57;
+  margin-bottom: 14px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #0a524b;
+}
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.12);
+  margin-bottom: 16px;
+  font-size: 15px;
+}
+
+input:focus, select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.submit-btn {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 30px rgba(47,179,149,0.2);
+  transition: 0.18s;
+}
+
+.submit-btn:hover {
+  transform: translateY(-4px);
+}
+
+.footer {
+  margin-top: 50px;
+  padding: 30px 0;
+  border-top: 1px solid rgba(10,60,55,0.05);
+  text-align: center;
+  color: #27524b;
+}
+
+@media (max-width: 600px) {
+  .form-card { padding: 16px; }
+  input, select { padding: 10px; }
+}
