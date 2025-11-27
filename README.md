@@ -1,2 +1,3 @@
-# Projeto-IA
+# DiabetalAI
+
 Projeto da faculdade com IA
