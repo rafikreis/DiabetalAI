@@ -13,7 +13,9 @@ from tensorflow.keras import layers
 def criar_novo_modelo():
     """Função para criar e treinar um novo modelo"""
     print("Carregando dados...")
-    df = pd.read_csv('C:/Users/searc/Codigos/DiabetalAI/backend/datasets/diabetes_dataset.csv')
+    diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+    caminho_arquivo = os.path.join(diretorio_atual, '..', 'datasets', 'diabetes_dataset.csv')
+    df = pd.read_csv(caminho_arquivo)
     
     print("\nPrimeiras linhas do dataset:")
     print(df.head())
