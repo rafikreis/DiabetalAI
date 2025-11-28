@@ -1,1 +1,10 @@
-#Coloque aqui as bibliotecas para instalar no python, junto com as versões Se der erro, remova essa linha
+# Rode cd backend
+# depois pip install -r requirements.txt    
+flask
+flask-cors
+matplotlib
+numpy
+pandas
+scikit-learn
+seaborn
+tensorflow

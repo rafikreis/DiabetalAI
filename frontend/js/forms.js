@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("form");
 
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const idade = Number(form.querySelector('input[placeholder="Ex: 35"]').value);
@@ -24,10 +24,22 @@ document.addEventListener("DOMContentLoaded", () => {
       historico
     };
 
-    console.log("Dados coletados:", dadosUsuario);
+    try {
+      const resposta = await fetch("http://127.0.0.1:5000/receber-dados", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dadosUsuario)
+      });
 
-    localStorage.setItem("dadosUsuario", JSON.stringify(dadosUsuario));
+      const resultado = await resposta.json();
+      console.log("Servidor respondeu:", resultado);
 
-    window.location.href = "results.html";
+      localStorage.setItem("dadosUsuario", JSON.stringify(dadosUsuario));
+
+      window.location.href = "results.html";  
+
+    } catch (erro) {
+      console.error("Erro ao enviar:", erro);
+    }
   });
 });
