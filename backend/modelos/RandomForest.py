@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
@@ -51,12 +52,21 @@ def criar_novo_modelo_random_forest():
     
     print("Modelo de Random Forest treinado com sucesso!")
 
-    y_pred = model.predict(X_test_scaled)
-    y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
-    
-    return model, scaler, X_test_scaled, y_test, y_pred, y_pred_proba
+    caminho_salvar = os.path.join(diretorio_atual, 'modelos_salvos')
+    os.makedirs(caminho_salvar, exist_ok=True)
 
-def avaliar_modelo_random_forest(model, X_test_scaled, y_test, y_pred, y_pred_proba):
+    joblib.dump(model, os.path.join(caminho_salvar, 'modelo_random_forest.pkl'))
+    joblib.dump(scaler, os.path.join(caminho_salvar, 'scaler_forest.pkl'))
+
+    print(f"\n✔ Modelo salvo em: {caminho_salvar}/modelo_random_forest.pkl")
+    print(f"✔ Scaler salvo em: {caminho_salvar}/scaler_forest.pkl")
+
+    y_pred = model.predict(X_test_scaled)
+
+    return model, scaler, X_test_scaled, y_test, y_pred
+
+
+def avaliar_modelo_random_forest(model, X_test_scaled, y_test, y_pred):
     """Função para avaliar o modelo de Random Forest e gerar gráficos"""
 
     accuracy = accuracy_score(y_test, y_pred)
@@ -73,82 +83,72 @@ def avaliar_modelo_random_forest(model, X_test_scaled, y_test, y_pred, y_pred_pr
     print("\nRELATÓRIO DE CLASSIFICAÇÃO:")
     print(classification_report(y_test, y_pred))
 
+    # Para a curva ROC ainda precisamos das probabilidades internamente
+    y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
     auc_roc = roc_auc_score(y_test, y_pred_proba)
     print(f"AUC-ROC: {auc_roc:.4f}")
 
-    plt.figure(figsize=(18, 12))
+    plt.figure(figsize=(12, 10))  # tamanho ideal
 
-    plt.subplot(2, 3, 1)
+    # --- 1) Matriz de Confusão ---
+    plt.subplot(2, 2, 1)
     cm = confusion_matrix(y_test, y_pred)
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
-    plt.title('Matriz de Confusão', fontsize=14, fontweight='bold')
-    plt.xlabel('Predito', fontsize=12)
-    plt.ylabel('Real', fontsize=12)
+    plt.title('Matriz de Confusão', fontsize=12, fontweight='bold')
+    plt.xlabel('Predito', fontsize=10)
+    plt.ylabel('Real', fontsize=10)
 
-    plt.subplot(2, 3, 2)
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
-    plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {auc_roc:.4f})', linewidth=2, color='red')
+    # --- 2) Curva ROC ---
+    plt.subplot(2, 2, 2)
+    fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+    plt.plot(fpr, tpr, label=f'AUC = {auc_roc:.4f}', linewidth=2)
     plt.plot([0, 1], [0, 1], 'k--', alpha=0.5)
-    plt.title('Curva ROC', fontsize=14, fontweight='bold')
-    plt.xlabel('Taxa de Falsos Positivos', fontsize=12)
-    plt.ylabel('Taxa de Verdadeiros Positivos', fontsize=12)
-    plt.legend(fontsize=10)
+    plt.title('Curva ROC', fontsize=12, fontweight='bold')
+    plt.xlabel('Falsos Positivos (FPR)', fontsize=10)
+    plt.ylabel('Verdadeiros Positivos (TPR)', fontsize=10)
+    plt.legend(fontsize=9)
     plt.grid(True, alpha=0.3)
 
-    plt.subplot(2, 3, 3)
-    plt.hist(y_pred_proba[y_test == 0], alpha=0.7, label='Não Diabético', bins=20, color='blue', edgecolor='black')
-    plt.hist(y_pred_proba[y_test == 1], alpha=0.7, label='Diabético', bins=20, color='red', edgecolor='black')
-    plt.axvline(x=0.5, color='black', linestyle='--', label='Threshold = 0.5')
-    plt.title('Distribuição das Probabilidades', fontsize=14, fontweight='bold')
-    plt.xlabel('Probabilidade Prevista', fontsize=12)
-    plt.ylabel('Frequência', fontsize=12)
-    plt.legend(fontsize=10)
+    # --- 3) Distribuição: Real vs Predito ---
+    plt.subplot(2, 2, 3)
+    real_counts = pd.Series(y_test).value_counts()
+    predito_counts = pd.Series(y_pred).value_counts()
+
+    categories = ['Não Diabético', 'Diabético']
+    real_values = [real_counts.get(0, 0), real_counts.get(1, 0)]
+    predito_values = [predito_counts.get(0, 0), predito_counts.get(1, 0)]
+
+    x = np.arange(len(categories))
+    width = 0.35
+
+    plt.bar(x - width/2, real_values, width, label='Real', alpha=0.7)
+    plt.bar(x + width/2, predito_values, width, label='Predito', alpha=0.7)
+    plt.title('Distribuição: Real vs Predito', fontsize=12, fontweight='bold')
+    plt.xlabel('Categoria', fontsize=10)
+    plt.ylabel('Quantidade', fontsize=10)
+    plt.xticks(x, categories)
+    plt.legend(fontsize=9)
     plt.grid(True, alpha=0.3)
 
-    plt.subplot(2, 3, 4)
-    feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
+    # --- 4) Importância das Features (Random Forest) ---
+    plt.subplot(2, 2, 4)
+    feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 
+                    'DiabetesPedigreeFunction', 'Age']
     feature_importance = model.feature_importances_
-    
+
     importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Importance': feature_importance
     }).sort_values('Importance', ascending=True)
-    
-    plt.barh(importance_df['Feature'], importance_df['Importance'], color='green', alpha=0.7, edgecolor='black')
-    plt.title('Importância das Features - Random Forest', fontsize=14, fontweight='bold')
-    plt.xlabel('Importância', fontsize=12)
+
+    plt.barh(importance_df['Feature'], importance_df['Importance'], alpha=0.7, edgecolor='black')
+    plt.title('Importância das Features', fontsize=12, fontweight='bold')
+    plt.xlabel('Importância', fontsize=10)
     plt.grid(True, alpha=0.3)
 
-    plt.subplot(2, 3, 5)
-    metrics = ['Acurácia', 'Precisão', 'Recall', 'AUC-ROC']
-    values = [accuracy, precision, recall, auc_roc]
-    colors = ['blue', 'green', 'orange', 'red']
-    
-    bars = plt.bar(metrics, values, color=colors, alpha=0.7, edgecolor='black')
-    plt.title('Comparação de Métricas', fontsize=14, fontweight='bold')
-    plt.ylabel('Valor', fontsize=12)
-    plt.ylim(0, 1)
-
-    for bar, value in zip(bars, values):
-        plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, 
-                f'{value:.3f}', ha='center', va='bottom', fontweight='bold')
-
-    plt.subplot(2, 3, 6)
-
-    n_trees_to_plot = min(10, len(model.estimators_))
-    tree_importances = []
-    
-    for i, tree in enumerate(model.estimators_[:n_trees_to_plot]):
-        tree_importances.append(tree.feature_importances_[0]) 
-    
-    plt.plot(range(1, n_trees_to_plot + 1), tree_importances, 'o-', linewidth=2, markersize=8)
-    plt.title('Importância da Glucose nas Primeiras Árvores', fontsize=14, fontweight='bold')
-    plt.xlabel('Número da Árvore', fontsize=12)
-    plt.ylabel('Importância da Glucose', fontsize=12)
-    plt.grid(True, alpha=0.3)
-    
     plt.tight_layout()
     plt.show()
+
 
     print("\n" + "="*50)
     print("IMPORTÂNCIA DAS FEATURES - RANDOM FOREST")
@@ -176,37 +176,19 @@ def fazer_previsao_random_forest(model, scaler):
             exemplo_dados = np.array([[pregnancies, glucose, blood_pressure, insulin, bmi, diabetes_pedigree, age]])
             exemplo_dados_scaled = scaler.transform(exemplo_dados)
 
-            probabilidade = model.predict_proba(exemplo_dados_scaled)[0][1]
+            # Previsão da classe (0 ou 1)
+            previsao_classe = model.predict(exemplo_dados_scaled)[0]
             
             print(f"\n" + "="*40)
             print("RESULTADO DA PREVISÃO - RANDOM FOREST")
             print("="*40)
-            print(f"Probabilidade de diabetes: {probabilidade:.4f} ({probabilidade*100:.2f}%)")
-            print(f"Previsão: {'DIABETES' if probabilidade > 0.5 else 'NÃO DIABETES'}")
-            
-            if probabilidade < 0.2:
-                risco = "MUITO BAIXO RISCO"
-                cor_risco = "🟢"
-            elif probabilidade < 0.4:
-                risco = "BAIXO RISCO"
-                cor_risco = "🟢"
-            elif probabilidade < 0.6:
-                risco = "RISCO MODERADO"
-                cor_risco = "🟡"
-            elif probabilidade < 0.8:
-                risco = "ALTO RISCO"
-                cor_risco = "🟠"
-            else:
-                risco = "MUITO ALTO RISCO"
-                cor_risco = "🔴"
-            
-            print(f"Nível de risco: {cor_risco} {risco}")
-            
-            if probabilidade > 0.7:
+            print(f"Previsão: {'DIABETES' if previsao_classe == 1 else 'NÃO DIABETES'}")
+
+            if previsao_classe == 1:
+                print("Nível de risco: 🔴 ALTO RISCO")
                 print("💡 Recomendação: Consultar médico especialista")
-            elif probabilidade > 0.3:
-                print("💡 Recomendação: Manter acompanhamento regular")
             else:
+                print("Nível de risco: 🟢 BAIXO RISCO")
                 print("💡 Recomendação: Manter hábitos saudáveis")
                 
             print("="*40)
@@ -241,9 +223,9 @@ def main():
                 print("\n" + "="*50)
                 print("CRIANDO NOVO MODELO - RANDOM FOREST")
                 print("="*50)
-                model, scaler, X_test_scaled, y_test, y_pred, y_pred_proba = criar_novo_modelo_random_forest()
+                model, scaler, X_test_scaled, y_test, y_pred = criar_novo_modelo_random_forest()
                 if model is not None:
-                    avaliar_modelo_random_forest(model, X_test_scaled, y_test, y_pred, y_pred_proba)
+                    avaliar_modelo_random_forest(model, X_test_scaled, y_test, y_pred)
                     
                     fazer_pred = input("\nDeseja fazer previsões para novos dados? (s/n): ").lower()
                     if fazer_pred == 's':

@@ -6,11 +6,13 @@ import os
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+import joblib  # <<< ADICIONADO PARA SALVAR O MODELO
+
 
 def criar_novo_modelo_regressao():
-    """Função para criar e treinar um novo modelo de regressão linear"""
+    """Função para criar e treinar um novo modelo de regressão logística e salvar o modelo"""
     print("Carregando dados...")
     diretorio_atual = os.path.dirname(os.path.abspath(__file__))
     caminho_arquivo = os.path.join(diretorio_atual, '..', 'datasets', 'diabetes_dataset.csv')
@@ -36,119 +38,111 @@ def criar_novo_modelo_regressao():
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-    print("\nTreinando modelo de Regressão Linear...")
-    model = LinearRegression()
+    print("\nTreinando modelo de Regressão Logística...")
+    model = LogisticRegression(random_state=42)
     model.fit(X_train_scaled, y_train)
     
-    print("Modelo de Regressão Linear treinado com sucesso!")
+    print("Modelo de Regressão Logística treinado com sucesso!")
 
-    y_pred = model.predict(X_test_scaled)
+    caminho_salvar = os.path.join(diretorio_atual, 'modelos_salvos')
+    os.makedirs(caminho_salvar, exist_ok=True)  # cria a pasta se não existir
 
-    y_pred_binary = (y_pred > 0.5).astype(int)
+    joblib.dump(model, os.path.join(caminho_salvar, 'modelo_logistico.pkl'))
+    joblib.dump(scaler, os.path.join(caminho_salvar, 'scaler_logic.pkl'))
     
-    return model, scaler, X_test_scaled, y_test, y_pred, y_pred_binary
+    print(f"\n✔ Modelo salvo em: {caminho_salvar}/modelo_logistico.pkl")
+    print(f"✔ Scaler salvo em: {caminho_salvar}/scaler_logic.pkl")
 
-def avaliar_modelo_regressao(model, X_test_scaled, y_test, y_pred, y_pred_binary):
-    """Função para avaliar o modelo de regressão e gerar gráficos"""
-
-    mse = mean_squared_error(y_test, y_pred)
-    mae = mean_absolute_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+    y_pred_binary = model.predict(X_test_scaled)
     
-    print("\n" + "="*50)
-    print("MÉTRICAS DE REGRESSÃO")
-    print("="*50)
-    print(f"Mean Squared Error (MSE): {mse:.4f}")
-    print(f"Mean Absolute Error (MAE): {mae:.4f}")
-    print(f"R² Score: {r2:.4f}")
+    return model, scaler, X_test_scaled, y_test, y_pred_binary
 
-    accuracy = np.mean(y_pred_binary == y_test)
-    
-    print("\n" + "="*50)
-    print("MÉTRICAS DE CLASSIFICAÇÃO (Threshold = 0.5)")
-    print("="*50)
+
+def avaliar_modelo_regressao(model, X_test_scaled, y_test, y_pred_binary):
+    """Função para avaliar o modelo de regressão logística e gerar gráficos"""
+
+    accuracy = accuracy_score(y_test, y_pred_binary)
+
+    print("\n" + "="*60)
+    print("MÉTRICAS DE CLASSIFICAÇÃO - REGRESSÃO LOGÍSTICA")
+    print("="*60)
     print(f"Acurácia: {accuracy:.4f}")
 
     print("\nRELATÓRIO DE CLASSIFICAÇÃO:")
     print(classification_report(y_test, y_pred_binary))
 
-    auc_roc = roc_auc_score(y_test, y_pred)
+    y_pred_proba = model.predict_proba(X_test_scaled)[:, 1]
+    auc_roc = roc_auc_score(y_test, y_pred_proba)
     print(f"AUC-ROC: {auc_roc:.4f}")
 
-    plt.figure(figsize=(18, 12))
+    plt.figure(figsize=(12, 8))
 
-    plt.subplot(2, 3, 1)
-    plt.scatter(y_test, y_pred, alpha=0.6, color='blue')
-    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
-    plt.title('Valores Reais vs Preditos', fontsize=14, fontweight='bold')
-    plt.xlabel('Valores Reais', fontsize=12)
-    plt.ylabel('Valores Preditos', fontsize=12)
-    plt.grid(True, alpha=0.3)
-
-    plt.subplot(2, 3, 2)
-    residuos = y_test - y_pred
-    plt.scatter(y_pred, residuos, alpha=0.6, color='green')
-    plt.axhline(y=0, color='red', linestyle='--')
-    plt.title('Análise de Resíduos', fontsize=14, fontweight='bold')
-    plt.xlabel('Valores Preditos', fontsize=12)
-    plt.ylabel('Resíduos', fontsize=12)
-    plt.grid(True, alpha=0.3)
-
-    plt.subplot(2, 3, 3)
+    plt.subplot(2, 2, 1)
     cm = confusion_matrix(y_test, y_pred_binary)
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
     plt.title('Matriz de Confusão', fontsize=14, fontweight='bold')
-    plt.xlabel('Predito', fontsize=12)
-    plt.ylabel('Real', fontsize=12)
+    plt.xlabel('Predito')
+    plt.ylabel('Real')
 
-    plt.subplot(2, 3, 4)
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred)
-    plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {auc_roc:.4f})', linewidth=2, color='red')
-    plt.plot([0, 1], [0, 1], 'k--', alpha=0.5)
+    plt.subplot(2, 2, 2)
+    fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+    plt.plot(fpr, tpr, linewidth=2, label=f'AUC = {auc_roc:.4f}')
+    plt.plot([0, 1], [0, 1], 'k--', alpha=0.6)  # linha aleatória
     plt.title('Curva ROC', fontsize=14, fontweight='bold')
-    plt.xlabel('Taxa de Falsos Positivos', fontsize=12)
-    plt.ylabel('Taxa de Verdadeiros Positivos', fontsize=12)
-    plt.legend(fontsize=10)
+    plt.xlabel('Taxa de Falsos Positivos')
+    plt.ylabel('Taxa de Verdadeiros Positivos')
+    plt.legend()
     plt.grid(True, alpha=0.3)
 
-    plt.subplot(2, 3, 5)
-    plt.hist(y_pred[y_test == 0], alpha=0.7, label='Não Diabético', bins=20, color='blue', edgecolor='black')
-    plt.hist(y_pred[y_test == 1], alpha=0.7, label='Diabético', bins=20, color='red', edgecolor='black')
-    plt.axvline(x=0.5, color='black', linestyle='--', label='Threshold = 0.5')
-    plt.title('Distribuição das Probabilidades', fontsize=14, fontweight='bold')
-    plt.xlabel('Probabilidade Prevista', fontsize=12)
-    plt.ylabel('Frequência', fontsize=12)
-    plt.legend(fontsize=10)
+    plt.subplot(2, 2, 3)
+    real_counts = pd.Series(y_test).value_counts()
+    predito_counts = pd.Series(y_pred_binary).value_counts()
+    categories = ['Não Diabético', 'Diabético']
+    real_values = [real_counts.get(0, 0), real_counts.get(1, 0)]
+    predito_values = [predito_counts.get(0, 0), predito_counts.get(1, 0)]
+    x = np.arange(len(categories))
+    width = 0.35
+
+    plt.bar(x - width/2, real_values, width, label='Real')
+    plt.bar(x + width/2, predito_values, width, label='Predito')
+    plt.xticks(x, categories)
+    plt.title('Distribuição: Real vs Predito', fontsize=14, fontweight='bold')
+    plt.xlabel('Categoria')
+    plt.ylabel('Quantidade')
+    plt.legend()
     plt.grid(True, alpha=0.3)
 
-    plt.subplot(2, 3, 6)
-    feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
-    coefficients = model.coef_
-    
+    plt.subplot(2, 2, 4)
+    feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI',
+                     'DiabetesPedigreeFunction', 'Age']
+    coefficients = model.coef_[0]
+
     importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Coeficiente': coefficients
     }).sort_values('Coeficiente', key=abs, ascending=True)
-    
-    plt.barh(importance_df['Feature'], importance_df['Coeficiente'], color='purple', alpha=0.7, edgecolor='black')
+
+    plt.barh(importance_df['Feature'], importance_df['Coeficiente'], alpha=0.7)
     plt.title('Importância dos Coeficientes', fontsize=14, fontweight='bold')
-    plt.xlabel('Valor do Coeficiente', fontsize=12)
+    plt.xlabel('Valor do Coeficiente')
     plt.grid(True, alpha=0.3)
-    
+
     plt.tight_layout()
     plt.show()
 
-    print("\n" + "="*50)
-    print("COEFICIENTES DA REGRESSÃO LINEAR")
-    print("="*50)
+    print("\n" + "="*60)
+    print("COEFICIENTES DA REGRESSÃO LOGÍSTICA")
+    print("="*60)
     coefficients_abs = pd.DataFrame({
         'Feature': feature_names,
         'Coeficiente': coefficients,
         'Absoluto': np.abs(coefficients)
     }).sort_values('Absoluto', ascending=False)
-    
+
     print(coefficients_abs.to_string(index=False))
-    print(f"\nIntercept: {model.intercept_:.4f}")
+    print(f"\nIntercept: {model.intercept_[0]:.4f}")
+
+
 
 def fazer_previsao_regressao(model, scaler):
     """Função para fazer previsões com dados inputados pelo usuário"""
@@ -170,38 +164,19 @@ def fazer_previsao_regressao(model, scaler):
             exemplo_dados = np.array([[pregnancies, glucose, blood_pressure, insulin, bmi, diabetes_pedigree, age]])
             exemplo_dados_scaled = scaler.transform(exemplo_dados)
 
-            probabilidade = model.predict(exemplo_dados_scaled)[0]
+            # Previsão da classe (0 ou 1)
+            previsao_classe = model.predict(exemplo_dados_scaled)[0]
             
             print(f"\n" + "="*40)
             print("RESULTADO DA PREVISÃO")
             print("="*40)
-            print(f"Score de regressão: {probabilidade:.4f}")
-            print(f"Probabilidade de diabetes: {probabilidade:.4f} ({probabilidade*100:.2f}%)")
-            print(f"Previsão: {'DIABETES' if probabilidade > 0.5 else 'NÃO DIABETES'}")
+            print(f"Previsão: {'DIABETES' if previsao_classe == 1 else 'NÃO DIABETES'}")
             
-            if probabilidade < 0.2:
-                risco = "MUITO BAIXO RISCO"
-                cor_risco = "🟢"
-            elif probabilidade < 0.4:
-                risco = "BAIXO RISCO"
-                cor_risco = "🟢"
-            elif probabilidade < 0.6:
-                risco = "RISCO MODERADO"
-                cor_risco = "🟡"
-            elif probabilidade < 0.8:
-                risco = "ALTO RISCO"
-                cor_risco = "🟠"
-            else:
-                risco = "MUITO ALTO RISCO"
-                cor_risco = "🔴"
-            
-            print(f"Nível de risco: {cor_risco} {risco}")
-            
-            if probabilidade > 0.7:
+            if previsao_classe == 1:
+                print("Nível de risco: 🔴 ALTO RISCO")
                 print("💡 Recomendação: Consultar médico especialista")
-            elif probabilidade > 0.3:
-                print("💡 Recomendação: Manter acompanhamento regular")
             else:
+                print("Nível de risco: 🟢 BAIXO RISCO") 
                 print("💡 Recomendação: Manter hábitos saudáveis")
                 
             print("="*40)
@@ -216,12 +191,12 @@ def fazer_previsao_regressao(model, scaler):
             break
 
 def main():
-    """Função principal com switch para Regressão Linear"""
+    """Função principal com switch para Regressão Logística"""
     print("="*60)
-    print("SISTEMA DE PREDIÇÃO DE DIABETES - REGRESSÃO LINEAR")
+    print("SISTEMA DE PREDIÇÃO DE DIABETES - REGRESSÃO LOGÍSTICA")
     print("="*60)
     print("\nOpções disponíveis:")
-    print("1. Criar e treinar novo modelo de Regressão Linear")
+    print("1. Criar e treinar novo modelo de Regressão Logística")
     print("2. Fazer previsão com dados inseridos")
     print("3. Sair")
     
@@ -234,11 +209,11 @@ def main():
             
             if opcao == 1:
                 print("\n" + "="*50)
-                print("CRIANDO NOVO MODELO - REGRESSÃO LINEAR")
+                print("CRIANDO NOVO MODELO - REGRESSÃO LOGÍSTICA")
                 print("="*50)
-                model, scaler, X_test_scaled, y_test, y_pred, y_pred_binary = criar_novo_modelo_regressao()
+                model, scaler, X_test_scaled, y_test, y_pred_binary = criar_novo_modelo_regressao()
                 if model is not None:
-                    avaliar_modelo_regressao(model, X_test_scaled, y_test, y_pred, y_pred_binary)
+                    avaliar_modelo_regressao(model, X_test_scaled, y_test, y_pred_binary)
                     
                     fazer_pred = input("\nDeseja fazer previsões para novos dados? (s/n): ").lower()
                     if fazer_pred == 's':

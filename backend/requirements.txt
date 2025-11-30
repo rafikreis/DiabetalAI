@@ -2,9 +2,11 @@
 # depois pip install -r requirements.txt    
 flask
 flask-cors
-matplotlib
-numpy
 pandas
-scikit-learn
+numpy
+matplotlib
 seaborn
+os
+scikit-learn
 tensorflow
+pickle

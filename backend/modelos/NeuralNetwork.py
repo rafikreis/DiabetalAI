@@ -8,10 +8,12 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras import layers
+from tensorflow.keras import layers # type: ignore
+import joblib
+
 
 def criar_novo_modelo():
-    """Função para criar e treinar um novo modelo"""
+    """Função para criar e treinar um novo modelo de rede neural"""
     print("Carregando dados...")
     diretorio_atual = os.path.dirname(os.path.abspath(__file__))
     caminho_arquivo = os.path.join(diretorio_atual, '..', 'datasets', 'diabetes_dataset.csv')
@@ -60,7 +62,7 @@ def criar_novo_modelo():
     model.summary()
 
     print("\nTreinando o modelo...")
-    history = model.fit(
+    model.fit(
         X_train_scaled, y_train,
         epochs=100,
         batch_size=32,
@@ -68,19 +70,26 @@ def criar_novo_modelo():
         verbose=1
     )
 
-    model.save('modelo_diabetes.h5')
-    import joblib
-    joblib.dump(scaler, 'scaler_diabetes.pkl')
-    print("\nModelo salvo como 'modelo_diabetes_novo.h5'")
-    print("Scaler salvo como 'scaler_diabetes_novo.pkl'")
-    
-    return model, scaler, X_test_scaled, y_test, history
+    caminho_salvar = os.path.join(diretorio_atual, 'modelos_salvos')
+    os.makedirs(caminho_salvar, exist_ok=True)
+
+    model.save(os.path.join(caminho_salvar, 'modelo_neural.h5'))
+    joblib.dump(scaler, os.path.join(caminho_salvar, 'scaler_neural.pkl'))
+
+    print("\n✔ Modelo salvo em 'modelos_salvos/modelo_neural.h5'")
+    print("✔ Scaler salvo em 'modelos_salvos/scaler_neural.pkl'")
+
+    y_pred_proba = model.predict(X_test_scaled).ravel()
+    y_pred = (y_pred_proba >= 0.5).astype(int) 
+
+    return model, scaler, X_test_scaled, y_test, y_pred
+
 
 def carregar_modelo_salvo():
     """Função para carregar um modelo salvo"""
     print("Carregando modelo salvo...")
     
-    if not os.path.exists('C:/Users/searc/Codigos/DiabetalAI/backend/modelo_diabetes.h5'):
+    if not os.path.exists('C:/Users/searc/Codigos/DiabetalAI/backend/modelos/modelos_salvos/modelo_neural.h5'):
         print("ERRO: Modelo salvo não encontrado!")
         return None, None, None, None, None
 
@@ -95,7 +104,7 @@ def carregar_modelo_salvo():
 
     import joblib
     try:
-        scaler = joblib.load('C:/Users/searc/Codigos/DiabetalAI/backend/scaler_diabetes.pkl')
+        scaler = joblib.load('C:/Users/searc/Codigos/DiabetalAI/backend/modelos/modelos_salvos/scaler_diabetes.pkl')
         X_test_scaled = scaler.transform(X_test)
     except:
         print("Scaler não encontrado, criando novo...")
@@ -103,7 +112,7 @@ def carregar_modelo_salvo():
         X_train_scaled = scaler.fit_transform(X_train)
         X_test_scaled = scaler.transform(X_test)
 
-    model = keras.models.load_model('C:/Users/searc/Codigos/DiabetalAI/backend/modelo_diabetes.h5')
+    model = keras.models.load_model('C:/Users/searc/Codigos/DiabetalAI/backend/modelos/modelos_salvos/modelo_neural.h5')
     print("Modelo carregado com sucesso!")
     
     return model, scaler, X_test_scaled, y_test, None
@@ -134,77 +143,62 @@ def avaliar_modelo(model, X_test_scaled, y_test, history=None):
     auc_roc = roc_auc_score(y_test, y_pred_proba)
     print(f"AUC-ROC: {auc_roc:.4f}")
 
-    plt.figure(figsize=(18, 12))
+    plt.figure(figsize=(12, 8))
 
-    # Gráfico 1: Curva de Aprendizado - Acurácia
-    if history is not None:
-        plt.subplot(2, 3, 1)
-        plt.plot(history.history['accuracy'], label='Acurácia Treino', linewidth=2)
-        plt.plot(history.history['val_accuracy'], label='Acurácia Validação', linewidth=2)
-        plt.title('Curva de Aprendizado - Acurácia', fontsize=14, fontweight='bold')
-        plt.xlabel('Época', fontsize=12)
-        plt.ylabel('Acurácia', fontsize=12)
-        plt.legend(fontsize=10)
-        plt.grid(True, alpha=0.3)
-
-    # Gráfico 2: Curva de Aprendizado - Loss
-    if history is not None:
-        plt.subplot(2, 3, 2)
-        plt.plot(history.history['loss'], label='Loss Treino', linewidth=2)
-        plt.plot(history.history['val_loss'], label='Loss Validação', linewidth=2)
-        plt.title('Curva de Aprendizado - Loss', fontsize=14, fontweight='bold')
-        plt.xlabel('Época', fontsize=12)
-        plt.ylabel('Loss', fontsize=12)
-        plt.legend(fontsize=10)
-        plt.grid(True, alpha=0.3)
-
-    # Gráfico 3: Matriz de Confusão
-    plt.subplot(2, 3, 3)
+    plt.subplot(2, 2, 1)
     cm = confusion_matrix(y_test, y_pred)
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
-    plt.title('Matriz de Confusão', fontsize=14, fontweight='bold')
-    plt.xlabel('Predito', fontsize=12)
-    plt.ylabel('Real', fontsize=12)
+    plt.title('Matriz de Confusão')
+    plt.xlabel('Predito')
+    plt.ylabel('Real')
 
-    # Gráfico 4: Curva ROC
-    plt.subplot(2, 3, 4)
-    fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
-    plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {auc_roc:.4f})', linewidth=2, color='red')
-    plt.plot([0, 1], [0, 1], 'k--', alpha=0.5)
-    plt.title('Curva ROC', fontsize=14, fontweight='bold')
-    plt.xlabel('Taxa de Falsos Positivos', fontsize=12)
-    plt.ylabel('Taxa de Verdadeiros Positivos', fontsize=12)
-    plt.legend(fontsize=10)
+    plt.subplot(2, 2, 2)
+    fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
+    plt.plot(fpr, tpr, label=f'AUC = {auc_roc:.2f}', linewidth=2)
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.title('Curva ROC')
+    plt.xlabel('Taxa de Falsos Positivos')
+    plt.ylabel('Taxa de Verdadeiros Positivos')
+    plt.legend(fontsize=8)
     plt.grid(True, alpha=0.3)
 
-    # Gráfico 5: Distribuição das Probabilidades
-    plt.subplot(2, 3, 5)
-    plt.hist(y_pred_proba[y_test == 0], alpha=0.7, label='Não Diabético', bins=20, color='blue', edgecolor='black')
-    plt.hist(y_pred_proba[y_test == 1], alpha=0.7, label='Diabético', bins=20, color='red', edgecolor='black')
-    plt.title('Distribuição das Probabilidades', fontsize=14, fontweight='bold')
-    plt.xlabel('Probabilidade Prevista', fontsize=12)
-    plt.ylabel('Frequência', fontsize=12)
-    plt.legend(fontsize=10)
+    plt.subplot(2, 2, 3)
+    real_counts = pd.Series(y_test).value_counts()
+    pred_counts = pd.Series(y_pred).value_counts()
+    categories = ['Não Diabético', 'Diabético']
+    x = np.arange(len(categories))
+    width = 0.35
+
+    plt.bar(x - width/2, [real_counts.get(0,0), real_counts.get(1,0)], width, label='Real')
+    plt.bar(x + width/2, [pred_counts.get(0,0), pred_counts.get(1,0)], width, label='Predito')
+    plt.title('Real vs Predito')
+    plt.ylabel('Quantidade')
+    plt.xticks(x, categories, rotation=10)
+    plt.legend(fontsize=8)
     plt.grid(True, alpha=0.3)
 
-    # Gráfico 6: Importância das Features
-    plt.subplot(2, 3, 6)
+    plt.subplot(2, 2, 4)
     first_layer_weights = np.abs(model.layers[0].get_weights()[0])
     feature_importance = np.mean(first_layer_weights, axis=1)
-    
-    feature_names = ['Pregnancies', 'Glucose', 'BloodPressure', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']
+
+    feature_names = [
+        'Pregnancies', 'Glucose', 'BloodPressure', 'Insulin',
+        'BMI', 'DiabetesPedigreeFunction', 'Age'
+    ]
     importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Importance': feature_importance
     }).sort_values('Importance', ascending=True)
-    
-    plt.barh(importance_df['Feature'], importance_df['Importance'], color='green', alpha=0.7, edgecolor='black')
-    plt.title('Importância das Features', fontsize=14, fontweight='bold')
-    plt.xlabel('Importância', fontsize=12)
+
+    plt.barh(importance_df['Feature'], importance_df['Importance'])
+    plt.title('Importância das Features')
+    plt.xlabel('Importância')
     plt.grid(True, alpha=0.3)
-    
+
     plt.tight_layout()
     plt.show()
+
+
 
     print("\n" + "="*50)
     print("IMPORTÂNCIA DAS FEATURES (aproximada)")
@@ -231,24 +225,22 @@ def fazer_previsao(model, scaler):
 
             exemplo_dados = np.array([[pregnancies, glucose, blood_pressure, insulin, bmi, diabetes_pedigree, age]])
             exemplo_dados_scaled = scaler.transform(exemplo_dados)
-            probabilidade = model.predict(exemplo_dados_scaled, verbose=0)[0][0]
+            
+            # Previsão da classe (0 ou 1)
+            previsao_proba = model.predict(exemplo_dados_scaled, verbose=0)[0][0]
+            previsao_classe = 1 if previsao_proba > 0.5 else 0
             
             print(f"\n" + "="*30)
             print("RESULTADO DA PREVISÃO")
             print("="*30)
-            print(f"Probabilidade de ter diabetes: {probabilidade:.4f} ({probabilidade*100:.2f}%)")
-            print(f"Previsão: {'DIABETES' if probabilidade > 0.5 else 'NÃO DIABETES'}")
+            print(f"Previsão: {'DIABETES' if previsao_classe == 1 else 'NÃO DIABETES'}")
 
-            if probabilidade < 0.3:
-                risco = "BAIXO RISCO"
-                cor_risco = "🟢"
-            elif probabilidade < 0.7:
-                risco = "RISCO MODERADO"
-                cor_risco = "🟡"
+            if previsao_classe == 1:
+                print("Nível de risco: 🔴 ALTO RISCO")
+                print("💡 Recomendação: Consultar médico especialista")
             else:
-                risco = "ALTO RISCO"
-                cor_risco = "🔴"
-            print(f"Nível de risco: {cor_risco} {risco}")
+                print("Nível de risco: 🟢 BAIXO RISCO") 
+                print("💡 Recomendação: Manter hábitos saudáveis")
             print("="*30)
             
         except ValueError:
