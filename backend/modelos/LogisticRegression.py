@@ -8,7 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix, roc_auc_score, roc_curve
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
-import joblib  # <<< ADICIONADO PARA SALVAR O MODELO
+import joblib  
 
 
 def criar_novo_modelo_regressao():
@@ -16,7 +16,9 @@ def criar_novo_modelo_regressao():
     print("Carregando dados...")
     diretorio_atual = os.path.dirname(os.path.abspath(__file__))
     caminho_arquivo = os.path.join(diretorio_atual, '..', 'datasets', 'diabetes_dataset.csv')
+    colunas_sem_zero = ['Glucose', 'BloodPressure', 'Insulin', 'BMI']
     df = pd.read_csv(caminho_arquivo)
+    df = df[(df[colunas_sem_zero] != 0).all(axis=1)]
     
     print("\nPrimeiras linhas do dataset:")
     print(df.head())
