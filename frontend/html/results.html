@@ -15,11 +15,8 @@
 	<nav class="nav">
 		<div class="nav-inner container">
 			<a class="brand" href="index.html">Diabetal <span class="dot">AI</span></a>
-
 			<div class="nav-actions">
-				<a href="index.html#info" class="nav-link">Sobre</a>
-				<a href="index.html#como" class="nav-link">Como Funciona</a>
-				<a href="forms.html" class="btn small">Refazer Avaliação</a>
+				<a href="forms.html" class="btn small">Nova Avaliação</a>
 			</div>
 		</div>
 	</nav>
@@ -27,36 +24,44 @@
 	<header class="header">
 		<div class="container">
 			<h1>Resultado da Avaliação</h1>
-			<p class="lead">Aqui está a estimativa baseada nos dados que você informou. Lembre-se: é apenas informativo e não substitui consulta médica.</p>
+			<p class="lead">Análise realizada por Inteligência Artificial baseada nos seus dados clínicos.</p>
 		</div>
 	</header>
 
 	<main class="container results-container">
 
-		<section class="result-grid">
-			<div class="result-card card-large">
-				<h2>Probabilidade Estimada</h2>
-				<div id="risco" class="risk-value">--%</div>
-				<p id="nivel-risco" class="risk-label">--</p>
-
-				<div class="risk-bar-wrap">
-					<div id="risk-bar" class="risk-bar"></div>
+		<section class="result-grid" id="main-grid">
+			
+			<div class="result-card card-large" id="card-diagnostico">
+				<h2>Diagnóstico da IA</h2>
+				
+				<div id="resultado-titulo" class="risk-value" style="font-size: 2rem; margin: 20px 0;">
+					Carregando...
 				</div>
+				
+				<p id="resultado-descricao" class="risk-label">Aguarde...</p>
 
 				<div class="result-actions">
 					<a href="forms.html" class="btn small">Refazer Avaliação</a>
 				</div>
 			</div>
 
-			<div class="result-card">
-				<h2>Principais fatores influentes</h2>
-				<ul id="fatores"></ul>
+			<div class="result-card" id="card-causas">
+				<h2>Principais Fatores de Risco</h2>
+				<p style="font-size: 0.9rem; color: #666; margin-bottom: 15px;">
+					Segundo a melhor IA selecionada, estes foram os campos determinantes:
+				</p>
+				<ul id="lista-fatores">
+				</ul>
 			</div>
 		</section>
 
-		<section class="result-card">
-			<h2>Gráfico Simples (Mockado)</h2>
-			<canvas id="grafico" width="700" height="250"></canvas>
+		<section style="margin-top: 40px;">
+			<h2 style="color: #274f48; margin-bottom: 10px;">Detalhamento por Modelo</h2>
+			<p>Veja como cada Inteligência Artificial interpretou seus dados (Gráficos de Impacto das Variáveis).</p>
+			
+			<div id="graficos-area" class="charts-container">
+			</div>
 		</section>
 
 	</main>
@@ -68,5 +73,4 @@
 	</footer>
 
 	<script src="../js/results.js"></script>
-</body>
 </html>

@@ -55,14 +55,3 @@ O terminal indicará que o servidor está rodando (geralmente em localhost ou 12
     Navegue até a pasta frontend -> html.
     Localize o arquivo index.html.
     Dê um clique duplo para abri-lo no seu navegador (Google Chrome, Edge, Firefox, etc).
-
-## 📂 Estrutura de Pastas (Resumo)
-
-DiabetalAI/
-├── backend/
-│   ├── routes/
-│   │   └── router.py  <-- Arquivo principal de execução
-│   └── requirements.txt
-└── frontend/
-    └── html/
-        └── index.html <-- Arquivo principal da interface

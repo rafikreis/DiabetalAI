@@ -12,7 +12,6 @@ CORS(app)
 @app.post("/receber-dados")
 def receber_dados():
     dados = request.get_json()
-    print("Dados recebidos:", dados)
     responses_models = call_models(dados)
     return jsonify({"status": "success", "mensagem": "Dados recebidos com sucesso!", "data": responses_models})
 
